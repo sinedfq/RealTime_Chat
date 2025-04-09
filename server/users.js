@@ -1,6 +1,23 @@
 const { trimStr } = require("./utils")
 let users = [];
 
+const kickUser = (params) => {
+    let index;
+    if (params.id) {
+        index = users.findIndex((user) => user.id === params.id);
+    } else {
+        index = users.findIndex((user) => user.room === params.room && user.name === params.name);
+    }
+    if (index !== -1) {
+        return users.splice(index, 1)[0];
+    }
+};
+
+
+const findUserById = (id) => {
+    return users.find(user => user.id === id);
+};
+
 const findUser = (user) => {
     const userName = trimStr(user.name);
     const userRoom = trimStr(user.room);
@@ -10,11 +27,16 @@ const findUser = (user) => {
     );
 }
 
-const addUser = (user) => {
-    const isExist = findUser(user);
-    !isExist && users.push(user);
-    const currentUser = isExist || user;
-    return { isExist: !!isExist, user: currentUser };
+const addUser = ({socket, name, room }) => {
+    const existingUser = users.find(user => user.room === room && user.name === name);
+    
+    if (existingUser) {
+        return { user: existingUser, isExist: true };
+    }
+    
+    const user = { id: socket.id, name, room };
+    users.push(user);
+    return { user, isExist: false };
 };
 
 const getRoomUsers = (room) => users.filter((u) => u.room === room);
@@ -29,4 +51,4 @@ const removeUser = (user) => {
     return found;
 }
 
-module.exports = { addUser, findUser, getRoomUsers, removeUser };
+module.exports = { addUser, findUser, getRoomUsers, removeUser, kickUser, findUserById };

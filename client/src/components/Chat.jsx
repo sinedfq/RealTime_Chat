@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import io, { Socket } from 'socket.io-client';
+import io from 'socket.io-client';
 import { useLocation, useNavigate } from 'react-router-dom';
 import EmojiPicler from 'emoji-picker-react';
 
@@ -12,33 +12,51 @@ const socket = io.connect("http://localhost:5000");
 const Chat = () => {
   const [state, setState] = useState([]);
   const { search } = useLocation();
-  const [params, setParams] = useState({ room: "", user: "" });
+  const [params, setParams] = useState({ room: "", name: "" }); 
   const [message, setMessage] = useState("");
   const [isOpen, setOpen] = useState(false);
   const [users, setUsers] = useState(0);
+  const [userList, setUserList] = useState([]);
+  const [creator, setCreator] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
     const searchParams = Object.fromEntries(new URLSearchParams(search));
     setParams(searchParams);
     socket.emit("join", searchParams);
-
   }, [search]);
 
   useEffect(() => {
     socket.on("message", ({ data }) => {
-      setState((_state) => ([..._state, data]));
+      setState((_state) => [..._state, data]);
     });
-  }, []);
 
-  useEffect(() => {
-    socket.on("room", ({ data: { users } }) => {
+    socket.on("room", ({ data: { users, creator } }) => {
       setUsers(users.length);
+      const names = users.map(user => user.name);
+      setUserList(names);
+      setCreator(creator || ""); 
     });
-  }, []);
 
-  const leftRoom = () => { 
-    socket.emit("leftRoom", {params});
+    socket.on('kicked', () => {
+      alert('Вы были исключены из чата.');
+      socket.disconnect();
+      navigate("/");
+    });
+
+    return () => {
+      socket.off("message");
+      socket.off("room");
+      socket.off('kicked');
+    };
+  }, [navigate]);
+
+  const handleKick = (userToKick) => {
+    socket.emit('kickUser', { userToKick, room: params.room });
+  };
+
+  const leftRoom = () => {
+    socket.emit("leftRoom", { params });
     navigate("/");
   };
 
@@ -46,23 +64,17 @@ const Chat = () => {
   const onEmojiClick = (emojiData) => {
     setMessage(prevMessage => `${prevMessage}${emojiData.emoji}`);
   };
-  const handleSumbit = (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-
     if (!message) return;
-
     socket.emit('sendMessage', { message, params });
-
     setMessage("");
   };
-
 
   return (
     <div className={styles.wrap}>
       <div className={styles.header}>
-        <div className={styles.title}>
-          {params.room}
-        </div>
+        <div className={styles.title}>{params.room}</div>
         <div className={styles.users}>В комнате сейчас - {users}</div>
         <button className={styles.left} onClick={leftRoom}>
           Покинуть чат
@@ -73,7 +85,7 @@ const Chat = () => {
         <Messages messages={state} name={params.name} />
       </div>
 
-      <form className={styles.form} onSubmit={handleSumbit}>
+      <form className={styles.form} onSubmit={handleSubmit}>
         <div className={styles.input}>
           <input
             type='text'
@@ -93,13 +105,31 @@ const Chat = () => {
             </div>
           )}
         </div>
-
         <div className={styles.button}>
-          <input type='submit' onSubmit={handleSumbit} value="Отправить" />
+          <input type='submit' value="Отправить" />
         </div>
       </form>
-    </div>
-  )
-}
 
-export default Chat
+      <div className={styles.userList}>
+        <h3>Участники:</h3>
+        <ul>
+          {userList.map((user, index) => (
+            <li key={index}>
+              {user}
+              {params.name && creator && params.name.trim() === creator.trim() && user.trim() !== params.name.trim() && (
+                <button 
+                  onClick={() => handleKick(user)}
+                  className={styles.kickButton}
+                >
+                  Исключить
+                </button>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+};
+
+export default Chat;
