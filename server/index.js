@@ -54,8 +54,8 @@ io.on("connection", (socket) => {
         });
 
         const userMessage = isExist ?
-            `${user.name}, welcome back` :
-            `Hello, ${user.name}`;
+            `${user.name}, с возвращением` :
+            `Привет, ${user.name}`;
 
         socket.emit("message", {
             data: { user: { name: "Admin" }, message: userMessage }
@@ -63,7 +63,7 @@ io.on("connection", (socket) => {
 
         // Notifying others in the room
         socket.broadcast.to(user.room).emit("message", {
-            data: { user: { name: "Admin" }, message: `${user.name} has joined` }
+            data: { user: { name: "Admin" }, message: `${user.name} подключился` }
         });
 
         // Sending updated room users list
@@ -138,7 +138,7 @@ io.on("connection", (socket) => {
             io.to(user.room).emit('message', {
                 data: {
                     user: { name: "Admin" },
-                    message: `${user.name} has left`
+                    message: `${user.name} покинул комнату`
                 }
             });
             // Sending updated room users list
@@ -157,7 +157,7 @@ io.on("connection", (socket) => {
             io.to(user.room).emit('message', {
                 data: {
                     user: { name: "Admin" },
-                    message: `${user.name} has disconnected`
+                    message: `${user.name} отключился`
                 }
             });
             // Sending updated room users list
