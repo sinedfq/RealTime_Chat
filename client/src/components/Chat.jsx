@@ -8,11 +8,12 @@ import styles from "../styles/Chat.module.css";
 import { Messages } from './Messages';
 
 const socket = io.connect("http://localhost:5000");
+const trimStr = (str) => (str || "").trim().toLowerCase();
 
 const Chat = () => {
   const [state, setState] = useState([]);
   const { search } = useLocation();
-  const [params, setParams] = useState({ room: "", name: "" }); 
+  const [params, setParams] = useState({ room: "", name: "" });
   const [message, setMessage] = useState("");
   const [isOpen, setOpen] = useState(false);
   const [users, setUsers] = useState(0);
@@ -35,7 +36,7 @@ const Chat = () => {
       setUsers(users.length);
       const names = users.map(user => user.name);
       setUserList(names);
-      setCreator(creator || ""); 
+      setCreator(creator || "");
     });
 
     socket.on('kicked', () => {
@@ -116,14 +117,16 @@ const Chat = () => {
           {userList.map((user, index) => (
             <li key={index}>
               {user}
-              {params.name && creator && params.name.trim() === creator.trim() && user.trim() !== params.name.trim() && (
-                <button 
-                  onClick={() => handleKick(user)}
-                  className={styles.kickButton}
-                >
-                  Исключить
-                </button>
-              )}
+              {params.name && creator &&
+                trimStr(params.name) === trimStr(creator) &&
+                trimStr(user) !== trimStr(params.name) && (
+                  <button
+                    onClick={() => handleKick(user)}
+                    className={styles.kickButton}
+                  >
+                    Исключить
+                  </button>
+                )}
             </li>
           ))}
         </ul>
