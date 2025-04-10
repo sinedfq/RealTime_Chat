@@ -71,6 +71,7 @@ io.on("connection", (socket) => {
     socket.on('kickUser', ({ userToKick, room }) => {
         const trimmedRoom = trimStr(room);
         const creator = roomCreators.get(trimmedRoom);
+        console.log(creator);
         const requester = findUserById(socket.id);
         
         console.log('Kick attempt:', {
@@ -102,11 +103,9 @@ io.on("connection", (socket) => {
                         message: `${userToKick} был исключен` 
                     } 
                 });
-                
                 io.to(trimmedRoom).emit("room", { 
                     data: { 
                         users: getRoomUsers(trimmedRoom), 
-                        creator 
                     } 
                 });
             }
