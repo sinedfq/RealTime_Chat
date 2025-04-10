@@ -1,6 +1,7 @@
 const { trimStr } = require("./utils");
 let users = [];
 
+/* Function to kick user from room by admin */
 const kickUser = (params) => {
     let index;
     if (params.id) {
@@ -14,9 +15,10 @@ const kickUser = (params) => {
     if (index !== -1) {
         return users.splice(index, 1)[0];
     }
-    return null; // Явное возвращение null если пользователь не найден
+    return null;
 };
 
+/* Functions to find user by id or username at room */
 const findUserById = (id) => {
     return users.find(user => user.id === id);
 };
@@ -30,6 +32,7 @@ const findUser = ({name, room}) => {
     );
 };
 
+/* The function addUser is designed to add a new user to a specific room in a socket-based application */
 const addUser = ({socket, name, room}) => {
     const existingUser = findUser({name, room});
     if (existingUser) {
@@ -41,10 +44,12 @@ const addUser = ({socket, name, room}) => {
     return { user, isExist: false };
 };
 
+/* A function to get all users out of a room */
 const getRoomUsers = (room) => {
     return users.filter(u => u.room === room);
 };
 
+/* Function to remove one user from the room */
 const removeUser = ({id, name, room}) => {
     const userToRemove = id ? 
         findUserById(id) : 
@@ -56,7 +61,7 @@ const removeUser = ({id, name, room}) => {
     return userToRemove;
 };
 
-// Новая функция для очистки всех пользователей
+/* Function for clear all users */
 const clearAllUsers = () => {
     users = [];
 };
@@ -68,5 +73,5 @@ module.exports = {
     removeUser, 
     kickUser, 
     findUserById,
-    clearAllUsers // Добавляем новую функцию
+    clearAllUsers 
 };

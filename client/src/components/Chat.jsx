@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import io from 'socket.io-client';
 import { useLocation, useNavigate } from 'react-router-dom';
-import EmojiPicler from 'emoji-picker-react';
+import EmojiPicker from 'emoji-picker-react';
 
 import icon from "../images/emoji.svg";
 import styles from "../styles/Chat.module.css";
@@ -19,6 +19,7 @@ const Chat = () => {
   const [users, setUsers] = useState(0);
   const [userList, setUserList] = useState([]);
   const [creator, setCreator] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -52,25 +53,41 @@ const Chat = () => {
     };
   }, [navigate]);
 
+  /* Function to kick user from the room */
   const handleKick = (userToKick) => {
     socket.emit('kickUser', { userToKick, room: params.room });
   };
 
+  /* Function to leave user from the room */
   const leftRoom = () => {
     socket.emit("leftRoom", { params });
     navigate("/");
   };
 
+  /* Tracking changes at input field */
   const handleChange = ({ target: { value } }) => setMessage(value);
+
+  /* Tracking click on emoji icon */
   const onEmojiClick = (emojiData) => {
     setMessage(prevMessage => `${prevMessage}${emojiData.emoji}`);
   };
+
+  /* Function for send message from user to chat */
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!message) return;
     socket.emit('sendMessage', { message, params });
     setMessage("");
   };
+
+  /* Search funtion */
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+  };
+
+  const filteredUsers = userList.filter(user =>
+    user.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className={styles.wrap}>
@@ -102,7 +119,7 @@ const Chat = () => {
           <img src={icon} alt="" onClick={() => setOpen(!isOpen)} />
           {isOpen && (
             <div className={styles.emojis}>
-              <EmojiPicler onEmojiClick={onEmojiClick} />
+              <EmojiPicker onEmojiClick={onEmojiClick} />
             </div>
           )}
         </div>
@@ -113,8 +130,17 @@ const Chat = () => {
 
       <div className={styles.userList}>
         <h3>Участники:</h3>
+        <div className={styles.searchContainer}>
+          <input
+            type="text"
+            placeholder="Поиск пользователей..."
+            value={searchTerm}
+            onChange={handleSearchChange}
+            className={styles.searchInput}
+          />
+        </div>
         <ul>
-          {userList.map((user, index) => (
+          {filteredUsers.map((user, index) => (
             <li key={index}>
               {user}
               {params.name && creator &&

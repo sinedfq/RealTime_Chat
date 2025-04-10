@@ -16,7 +16,7 @@ const Main = () => {
     const [existingRooms, setExistingRooms] = useState([]);
     const [showNewRoomInput, setShowNewRoomInput] = useState(false);
 
-    // Получаем список существующих комнат при загрузке
+    /* Getting a list of all existing rooms */
     useEffect(() => {
         socket.emit('getRooms');
         socket.on('roomsList', (rooms) => {
@@ -28,22 +28,27 @@ const Main = () => {
         };
     }, []);
 
+    /* Updates the state with the new value for the corresponding input field */
     const handleChange = ({ target: { value, name } }) => {
         setValues({ ...values, [name]: value });
     };
 
+    /* Updates the room value in the state and hides the input for creating a new room */
     const handleRoomSelect = (e) => {
         setValues({ ...values, [ROOM]: e.target.value });
         setShowNewRoomInput(false);
     };
 
+    /* Clears the room value in the state and shows the input for creating a new room */
     const handleNewRoomClick = () => {
         setValues({ ...values, [ROOM]: "" });
         setShowNewRoomInput(true);
     };
 
+    /* Checks if the required fields (USERNAME and ROOM) are filled */
     const handleClick = (e) => {
         const isDisabled = !values[USERNAME] || !values[ROOM];
+        // If the fields are not filled, prevents the default action
         if (isDisabled) e.preventDefault();
     };
 
