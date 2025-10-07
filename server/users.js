@@ -1,8 +1,8 @@
-const { trimStr } = require("./utils");
+import { trimStr  } from "./utils.js";
 let users = [];
 
 /* Function to kick user from room by admin */
-const kickUser = (params) => {
+export const kickUser = (params) => {
     let index;
     if (params.id) {
         index = users.findIndex(user => user.id === params.id);
@@ -19,11 +19,11 @@ const kickUser = (params) => {
 };
 
 /* Functions to find user by id or username at room */
-const findUserById = (id) => {
+export const findUserById = (id) => {
     return users.find(user => user.id === id);
 };
 
-const findUser = ({name, room}) => {
+export const findUser = ({name, room}) => {
     const userName = trimStr(name);
     const userRoom = trimStr(room);
     return users.find(u => 
@@ -33,7 +33,7 @@ const findUser = ({name, room}) => {
 };
 
 /* The function addUser is designed to add a new user to a specific room in a socket-based application */
-const addUser = ({socket, name, room}) => {
+export const addUser = ({socket, name, room}) => {
     const existingUser = findUser({name, room});
     if (existingUser) {
         return { user: existingUser, isExist: true };
@@ -45,12 +45,12 @@ const addUser = ({socket, name, room}) => {
 };
 
 /* A function to get all users out of a room */
-const getRoomUsers = (room) => {
+export const getRoomUsers = (room) => {
     return users.filter(u => u.room === room);
 };
 
 /* Function to remove one user from the room */
-const removeUser = ({id, name, room}) => {
+export const removeUser = ({id, name, room}) => {
     const userToRemove = id ? 
         findUserById(id) : 
         findUser({name, room});
@@ -62,16 +62,6 @@ const removeUser = ({id, name, room}) => {
 };
 
 /* Function for clear all users */
-const clearAllUsers = () => {
+export const clearAllUsers = () => {
     users = [];
-};
-
-module.exports = { 
-    addUser, 
-    findUser, 
-    getRoomUsers, 
-    removeUser, 
-    kickUser, 
-    findUserById,
-    clearAllUsers 
 };

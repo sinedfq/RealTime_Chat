@@ -2,12 +2,16 @@ import React, { useEffect, useState } from 'react';
 import io from 'socket.io-client';
 import { useLocation, useNavigate } from 'react-router-dom';
 import EmojiPicker from 'emoji-picker-react';
-
+import DOMPurify from 'dompurify';
 import icon from "../images/emoji.svg";
 import styles from "../styles/Chat.module.css";
 import { Messages } from './Messages';
 
-const socket = io.connect("http://localhost:5000");
+
+
+const serverUrl = process.env.REACT_APP_SERVER_URL || 'http://localhost:5000';
+const socket = io.connect(serverUrl);
+
 const trimStr = (str) => (str || "").trim().toLowerCase();
 
 const Chat = () => {
@@ -20,7 +24,24 @@ const Chat = () => {
   const [userList, setUserList] = useState([]);
   const [creator, setCreator] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [typingUser, setTypingUser] = useState(null);
   const navigate = useNavigate();
+
+
+  useEffect(() => {
+    socket.on("connect_error", (err) => {
+      console.error("Connection error:", err.message);
+    });
+
+    socket.on("messageError", (err) => {
+      console.error("Server error:", err);
+    });
+
+    return () => {
+      socket.off("connect_error");
+      socket.off("messageError");
+    };
+  }, []);
 
   useEffect(() => {
     const searchParams = Object.fromEntries(new URLSearchParams(search));
@@ -31,6 +52,10 @@ const Chat = () => {
   useEffect(() => {
     socket.on("message", ({ data }) => {
       setState((_state) => [..._state, data]);
+    });
+
+    socket.on("messageHistory", (messages) => {
+      setState(messages);
     });
 
     socket.on("room", ({ data: { users, creator } }) => {
@@ -65,8 +90,30 @@ const Chat = () => {
   };
 
   /* Tracking changes at input field */
-  const handleChange = ({ target: { value } }) => setMessage(value);
+  const handleChange = (e) => {
+    setMessage(e.target.value);
 
+    if (e.target.value.length > 0) {
+      socket.emit("typing", { room: params.room, user: params.name });
+    } else {
+      socket.emit("stopTyping", { room: params.room, user: params.name });
+    }
+  }
+
+  useEffect(() => {
+    socket.on("typing", ({ user }) => {
+      setTypingUser(user);
+    });
+
+    socket.on("stopTyping", ({ user }) => {
+      setTypingUser(null);
+    });
+
+    return () => {
+      socket.off("typing");
+      socket.off("stopTyping");
+    };
+  }, []);
   /* Tracking click on emoji icon */
   const onEmojiClick = (emojiData) => {
     setMessage(prevMessage => `${prevMessage}${emojiData.emoji}`);
@@ -75,9 +122,13 @@ const Chat = () => {
   /* Function for send message from user to chat */
   const handleSubmit = (e) => {
     e.preventDefault();
+    const sanitizedMessage = DOMPurify.sanitize(message);
     if (!message) return;
-    socket.emit('sendMessage', { message, params });
-    setMessage("");
+
+    if (sanitizedMessage.trim()) {
+      socket.emit('sendMessage', { message, params });
+      setMessage("");
+    }
   };
 
   /* Search funtion */
@@ -103,6 +154,14 @@ const Chat = () => {
         <Messages messages={state} name={params.name} />
       </div>
 
+      {typingUser && (
+        <div className={styles.typingIndicator}>
+          <span>{typingUser} печатает</span>
+          <span className={styles.typingDot}></span>
+          <span className={styles.typingDot}></span>
+          <span className={styles.typingDot}></span>
+        </div>
+      )}
       <form className={styles.form} onSubmit={handleSubmit}>
         <div className={styles.input}>
           <input
@@ -123,6 +182,8 @@ const Chat = () => {
             </div>
           )}
         </div>
+
+
         <div className={styles.button}>
           <input type='submit' value="Отправить" />
         </div>

@@ -8,7 +8,8 @@ const FIELDS = {
     ROOM: "room",
 };
 
-const socket = io.connect("http://localhost:5000");
+const serverUrl = process.env.REACT_APP_SERVER_URL || 'http://localhost:5000';
+const socket = io.connect(serverUrl);
 
 const Main = () => {
     const { USERNAME, ROOM } = FIELDS;
@@ -18,6 +19,8 @@ const Main = () => {
 
     /* Getting a list of all existing rooms */
     useEffect(() => {
+        console.log('Server URL:', serverUrl); // Добавьте для отладки
+        
         socket.emit('getRooms');
         socket.on('roomsList', (rooms) => {
             setExistingRooms(rooms);
@@ -49,7 +52,10 @@ const Main = () => {
     const handleClick = (e) => {
         const isDisabled = !values[USERNAME] || !values[ROOM];
         // If the fields are not filled, prevents the default action
-        if (isDisabled) e.preventDefault();
+        if (isDisabled) {
+            e.preventDefault();
+            alert('Заполните все поля!');
+        }
     };
 
     return (
@@ -120,6 +126,16 @@ const Main = () => {
                         </button>
                     </Link>
                 </form>
+                
+                {/* Отладочная информация */}
+                <div style={{ 
+                    marginTop: '20px', 
+                    padding: '10px', 
+                    background: '#f5f5f5', 
+                    fontSize: '12px',
+                    borderRadius: '5px'
+                }}>
+                </div>
             </div>
         </div>
     );
